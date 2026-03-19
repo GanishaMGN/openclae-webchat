@@ -30,6 +30,27 @@ npm start
 
 Open: `http://127.0.0.1:8080`
 
+
+## Screenshots / Demo
+
+> Add real screenshots in `docs/assets/` and update image links below.
+
+### Desktop
+
+![Desktop chat view](docs/assets/home.png)
+
+### Streaming in progress
+
+![Streaming response](docs/assets/streaming.png)
+
+### Mobile view
+
+![Mobile view](docs/assets/mobile-view.png)
+
+### Optional demo GIF
+
+![Demo GIF](docs/assets/demo.gif)
+
 ## Environment variables
 
 - `PORT` (default `8080`)
@@ -57,8 +78,11 @@ See `docs/openclaw-integration.md` for deployment/integration steps.
 
 ## Contributing
 
+See `CONTRIBUTING.md` for contribution workflow and local validation steps.
+
 This repository includes:
 
 - issue templates in `.github/ISSUE_TEMPLATE/`
 - pull request template in `.github/PULL_REQUEST_TEMPLATE.md`
 - changelog in `CHANGELOG.md`
+- code of conduct in `CODE_OF_CONDUCT.md`

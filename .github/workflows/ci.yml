@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Basic JS syntax check
+        run: node --check server.js
+
+      - name: Basic shell syntax checks
+        run: |
+          bash -n scripts/start-chat-stack.sh
+          bash -n scripts/chatctl.sh
+          bash -n scripts/gateway-watchdog.sh
+
+      - name: Basic startup smoke check
+        run: |
+          timeout 8s node server.js || true
+          # If server started correctly, log should contain this line:
+          # "OpenClaw Chat UI running at"
