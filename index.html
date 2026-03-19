@@ -1,0 +1,2047 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>OpenClaw Chat</title>
+    <style>
+        :root {
+            --bg-1: #667eea;
+            --bg-2: #764ba2;
+            --panel: rgba(255,255,255,0.88);
+            --panel-solid: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --line: #e5e7eb;
+            --line-strong: #d7dce4;
+            --user: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --assistant: #ffffff;
+            --bubble-shadow: 0 10px 30px rgba(31, 41, 55, 0.08);
+            --danger: #ef4444;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --app-height: 100dvh;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; }
+
+        body {
+            font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--bg-1), var(--bg-2));
+            color: var(--text);
+            min-height: var(--app-height);
+            height: var(--app-height);
+            overflow: hidden;
+        }
+
+        button, select, textarea, input { font: inherit; }
+
+        .app-shell {
+            display: grid;
+            grid-template-columns: 320px minmax(0, 1fr) 290px;
+            min-height: var(--app-height);
+            height: var(--app-height);
+            gap: 16px;
+            padding: 16px;
+        }
+
+        .sidebar,
+        .chat-shell,
+        .info-panel {
+            background: var(--panel);
+            backdrop-filter: blur(18px);
+            border: 1px solid rgba(255,255,255,0.28);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+            min-height: 0;
+        }
+
+        .sidebar,
+        .info-panel {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand,
+        .panel-header,
+        .chat-header {
+            border-bottom: 1px solid rgba(229,231,235,0.8);
+            background: linear-gradient(135deg, rgba(102,126,234,0.18), rgba(118,75,162,0.14));
+        }
+
+        .brand {
+            padding: 20px;
+        }
+
+        .brand h1 { font-size: 22px; margin-bottom: 6px; }
+        .brand p,
+        .section-note,
+        .status-row,
+        .history-meta,
+        .empty-state,
+        .panel-muted,
+        .chat-header p,
+        .search-result-meta,
+        .menu-label {
+            color: var(--muted);
+        }
+
+        .sidebar-section,
+        .panel-section {
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(229,231,235,0.8);
+        }
+
+        .sidebar-section h2,
+        .panel-section h3,
+        .history-group h3 {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+            margin-bottom: 10px;
+        }
+
+        .toolbar,
+        .row,
+        .input-topline,
+        .history-head,
+        .chat-subhead,
+        .panel-list-row,
+        .search-result {
+            display: flex;
+            align-items: center;
+        }
+
+        .toolbar,
+        .chat-subhead,
+        .panel-list-row,
+        .search-result {
+            justify-content: space-between;
+        }
+
+        .row,
+        .input-topline,
+        .history-head {
+            gap: 10px;
+        }
+
+        select,
+        .secondary-btn,
+        .danger-btn,
+        .ghost-btn,
+        .menu-btn,
+        .search-input,
+        .inline-input {
+            width: 100%;
+            border-radius: 14px;
+            border: 1px solid var(--line);
+            background: rgba(255,255,255,0.92);
+            color: var(--text);
+            min-height: 44px;
+        }
+
+        select,
+        .search-input,
+        .inline-input {
+            padding: 0 14px;
+        }
+
+        .search-input {
+            outline: none;
+        }
+
+        .secondary-btn,
+        .danger-btn,
+        .ghost-btn,
+        .menu-btn,
+        .icon-btn,
+        .attach-btn,
+        .send-btn,
+        .sheet-close {
+            cursor: pointer;
+            transition: 0.18s ease;
+        }
+
+        .secondary-btn,
+        .danger-btn,
+        .ghost-btn,
+        .menu-btn {
+            padding: 10px 14px;
+        }
+
+        .secondary-btn:hover,
+        .danger-btn:hover,
+        .ghost-btn:hover,
+        .menu-btn:hover,
+        .icon-btn:hover,
+        .send-btn:hover,
+        .attach-btn:hover,
+        .history-item:hover,
+        .sheet-close:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(31,41,55,0.08);
+        }
+
+        .secondary-btn,
+        .ghost-btn,
+        .menu-btn,
+        .icon-btn,
+        .attach-btn {
+            background: rgba(255,255,255,0.92);
+        }
+
+        .ghost-btn {
+            border-color: transparent;
+            background: rgba(99,102,241,0.08);
+            color: #4338ca;
+        }
+
+        .danger-btn {
+            color: var(--danger);
+            border-color: rgba(239,68,68,0.25);
+            background: rgba(254,242,242,0.95);
+        }
+
+        .status-card,
+        .panel-card,
+        .search-results {
+            display: grid;
+            gap: 10px;
+            padding: 14px;
+            border-radius: 16px;
+            background: rgba(255,255,255,0.78);
+            border: 1px solid rgba(229,231,235,0.9);
+        }
+
+        .status-pill,
+        .info-chip,
+        .tiny-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            width: fit-content;
+            padding: 7px 10px;
+            border-radius: 999px;
+            font-weight: 600;
+        }
+
+        .status-pill,
+        .tiny-pill {
+            font-size: 12px;
+        }
+
+        .status-pill {
+            background: rgba(16,185,129,0.12);
+            color: #047857;
+        }
+
+        .tiny-pill {
+            padding: 5px 9px;
+            font-size: 11px;
+            background: rgba(99,102,241,0.12);
+            color: #4338ca;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+        }
+
+        .sidebar-scroll,
+        .panel-scroll {
+            flex: 1;
+            min-height: 0;
+            overflow: auto;
+        }
+
+        .history-list {
+            padding: 8px 12px 16px;
+            display: grid;
+            gap: 14px;
+        }
+
+        .history-group {
+            display: grid;
+            gap: 10px;
+        }
+
+        .history-group h3 {
+            margin: 0 8px;
+        }
+
+        .history-item {
+            padding: 12px;
+            border-radius: 16px;
+            background: rgba(255,255,255,0.75);
+            border: 1px solid rgba(229,231,235,0.9);
+            transition: 0.18s ease;
+        }
+
+        .history-item.active {
+            border-color: rgba(102,126,234,0.45);
+            background: rgba(238,242,255,0.95);
+        }
+
+        .history-item-main {
+            cursor: pointer;
+        }
+
+        .history-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.35;
+        }
+
+        .history-preview {
+            font-size: 12px;
+            color: var(--muted);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.45;
+            margin-bottom: 8px;
+        }
+
+        .history-meta {
+            font-size: 12px;
+        }
+
+        .menu-wrap {
+            position: relative;
+        }
+
+        .menu-btn {
+            width: 36px;
+            min-height: 36px;
+            border-radius: 12px;
+            padding: 0;
+        }
+
+        .context-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            width: 190px;
+            z-index: 20;
+            background: white;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            box-shadow: 0 12px 24px rgba(17,24,39,0.12);
+            padding: 8px;
+            display: grid;
+            gap: 6px;
+        }
+
+        .context-menu button {
+            border: none;
+            background: transparent;
+            text-align: left;
+            border-radius: 12px;
+            padding: 10px 12px;
+            cursor: pointer;
+        }
+
+        .context-menu button:hover {
+            background: rgba(99,102,241,0.08);
+        }
+
+        .context-menu .danger-item:hover {
+            background: rgba(239,68,68,0.08);
+            color: var(--danger);
+        }
+
+        .chat-shell {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            min-height: 0;
+            height: 100%;
+        }
+
+        .chat-header {
+            padding: 18px 22px;
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .chat-header h2 { font-size: 18px; }
+        .header-actions { display: flex; gap: 10px; align-items: center; }
+
+        .icon-btn,
+        .attach-btn,
+        .send-btn,
+        .sheet-close {
+            border: none;
+        }
+
+        .icon-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            min-height: 0;
+            overflow: auto;
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            background:
+                radial-gradient(circle at top right, rgba(102,126,234,0.10), transparent 30%),
+                linear-gradient(180deg, rgba(255,255,255,0.52), rgba(245,247,255,0.72));
+        }
+
+        .message {
+            display: flex;
+            animation: fadeUp 0.22s ease;
+        }
+
+        .message.user { justify-content: flex-end; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message-bubble {
+            max-width: min(820px, 85%);
+            border-radius: 22px;
+            padding: 14px 16px;
+            box-shadow: var(--bubble-shadow);
+            overflow-wrap: anywhere;
+        }
+
+        .message-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .message-action-btn {
+            border: 1px solid var(--line);
+            background: rgba(255,255,255,0.96);
+            color: var(--muted);
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .message-action-btn:hover {
+            color: var(--text);
+            box-shadow: 0 8px 20px rgba(31,41,55,0.08);
+        }
+
+        .message.user .message-bubble {
+            background: var(--user);
+            color: white;
+            border-bottom-right-radius: 8px;
+        }
+
+        .message.assistant .message-bubble {
+            background: var(--assistant);
+            border-bottom-left-radius: 8px;
+        }
+
+        .message-meta {
+            font-size: 12px;
+            opacity: 0.78;
+            margin-bottom: 8px;
+        }
+
+        .message.user .message-meta { color: rgba(255,255,255,0.82); }
+        .message.assistant .message-meta { color: var(--muted); }
+
+        .message-image {
+            max-width: 100%;
+            border-radius: 14px;
+            margin-top: 8px;
+        }
+
+        .composer {
+            border-top: 1px solid rgba(229,231,235,0.88);
+            background: rgba(255,255,255,0.94);
+            padding: 16px 18px calc(16px + env(safe-area-inset-bottom));
+        }
+
+        .file-preview {
+            display: none;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .file-card {
+            position: relative;
+            border-radius: 16px;
+            border: 1px solid var(--line);
+            background: #fff;
+            padding: 10px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            min-width: 0;
+        }
+
+        .file-thumb {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            overflow: hidden;
+            flex: 0 0 auto;
+            background: linear-gradient(135deg, #818cf8, #c084fc);
+            color: white;
+            display: grid;
+            place-items: center;
+            font-size: 22px;
+        }
+
+        .file-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .file-info {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .file-name {
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-size {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .remove-file {
+            position: absolute;
+            right: 8px;
+            top: 8px;
+            width: 24px;
+            height: 24px;
+            border-radius: 999px;
+            border: none;
+            background: rgba(17,24,39,0.85);
+            color: white;
+            cursor: pointer;
+        }
+
+        .composer-row {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .input-wrap {
+            flex: 1;
+            border: 1px solid var(--line);
+            border-radius: 22px;
+            background: white;
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .input-topline {
+            font-size: 12px;
+            color: var(--muted);
+            flex-wrap: wrap;
+        }
+
+        .info-chip {
+            min-height: 24px;
+            padding: 4px 9px;
+            font-size: 11px;
+            border: 1px solid transparent;
+        }
+
+        .info-chip.model-chip {
+            background: rgba(99, 102, 241, 0.14);
+            color: #4338ca;
+            border-color: rgba(99, 102, 241, 0.18);
+        }
+
+        .info-chip.file-chip {
+            background: rgba(16, 185, 129, 0.14);
+            color: #047857;
+            border-color: rgba(16, 185, 129, 0.18);
+        }
+
+        .model-inline-select {
+            min-height: 26px;
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            border-radius: 999px;
+            padding: 2px 10px;
+            font-size: 11px;
+            width: auto;
+            max-width: 220px;
+            background: rgba(99, 102, 241, 0.08);
+            color: #4338ca;
+        }
+
+        #messageInput {
+            width: 100%;
+            border: none;
+            resize: none;
+            outline: none;
+            max-height: 180px;
+            min-height: 26px;
+            font-size: 16px;
+            line-height: 1.5;
+            color: var(--text);
+            background: transparent;
+        }
+
+        .attach-btn,
+        .send-btn,
+        .stop-btn {
+            width: 52px;
+            height: 52px;
+            border-radius: 18px;
+            flex: 0 0 auto;
+        }
+
+        .attach-btn {
+            border: 1px solid var(--line);
+            color: #5b67f1;
+        }
+
+        .send-btn {
+            background: var(--user);
+            color: white;
+            font-size: 18px;
+        }
+
+        .stop-btn {
+            display: none;
+            border: 1px solid rgba(239,68,68,0.24);
+            background: rgba(254,242,242,0.98);
+            color: var(--danger);
+            font-size: 18px;
+        }
+
+        .stop-btn.visible {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .loading {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .loading-wrap {
+            display: grid;
+            gap: 8px;
+        }
+
+        .loading-status {
+            font-size: 12px;
+            color: var(--muted);
+            line-height: 1.45;
+        }
+
+        .typing-cursor {
+            display: inline-block;
+            width: 8px;
+            height: 1.05em;
+            margin-left: 2px;
+            vertical-align: text-bottom;
+            border-radius: 2px;
+            background: #667eea;
+            animation: blinkCursor 1s steps(1) infinite;
+        }
+
+        @keyframes blinkCursor {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+
+        .loading-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #667eea;
+            animation: bounce 1.2s infinite ease-in-out;
+        }
+
+        .loading-dot:nth-child(2) { animation-delay: 0.15s; }
+        .loading-dot:nth-child(3) { animation-delay: 0.3s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0.65); opacity: 0.6; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        .markdown-content { line-height: 1.65; }
+        .markdown-content p + p { margin-top: 10px; }
+        .markdown-content ul,
+        .markdown-content ol { margin: 10px 0 0 18px; }
+        .markdown-content pre {
+            margin-top: 10px;
+            padding: 12px;
+            border-radius: 12px;
+            overflow: auto;
+            background: rgba(17,24,39,0.92);
+            color: #f9fafb;
+        }
+        .markdown-content code {
+            background: rgba(17,24,39,0.08);
+            padding: 2px 6px;
+            border-radius: 6px;
+        }
+        .markdown-content pre code {
+            background: transparent;
+            padding: 0;
+        }
+
+        .panel-header {
+            padding: 18px 20px;
+        }
+
+        .panel-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .panel-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .panel-list-row span:first-child {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .panel-list-row span:last-child {
+            font-size: 13px;
+            font-weight: 600;
+            text-align: right;
+            max-width: 55%;
+            overflow-wrap: anywhere;
+        }
+
+        .summary-list,
+        .attachment-list,
+        .search-results {
+            display: grid;
+            gap: 10px;
+        }
+
+        .summary-list li,
+        .attachment-item,
+        .search-result,
+        .empty-card {
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: rgba(255,255,255,0.72);
+            padding: 12px;
+            list-style: none;
+        }
+
+        .attachment-item {
+            display: grid;
+            gap: 6px;
+        }
+
+        .attachment-name {
+            font-size: 13px;
+            font-weight: 600;
+            overflow-wrap: anywhere;
+        }
+
+        .attachment-meta,
+        .search-result-meta,
+        .empty-card {
+            font-size: 12px;
+        }
+
+        .search-result {
+            gap: 12px;
+            cursor: pointer;
+        }
+
+        .search-result-title {
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .search-result-snippet {
+            font-size: 12px;
+            color: var(--text);
+            line-height: 1.5;
+        }
+
+        .bottom-sheet {
+            position: fixed;
+            inset: auto 0 0 0;
+            background: rgba(15, 23, 42, 0.28);
+            display: none;
+            z-index: 50;
+            padding: 0;
+        }
+
+        .bottom-sheet.open {
+            display: block;
+        }
+
+        .bottom-sheet-panel {
+            background: rgba(255,255,255,0.98);
+            border-radius: 24px 24px 0 0;
+            max-height: 78vh;
+            overflow: auto;
+            padding-bottom: calc(18px + env(safe-area-inset-bottom));
+        }
+
+        .sheet-head {
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--line);
+            position: sticky;
+            top: 0;
+            background: rgba(255,255,255,0.98);
+            z-index: 2;
+        }
+
+        .sheet-close {
+            width: 40px;
+            height: 40px;
+            border-radius: 14px;
+            background: rgba(99,102,241,0.08);
+            color: #4338ca;
+        }
+
+        .hidden { display: none !important; }
+        #fileInput { display: none; }
+
+        @media (max-width: 1220px) {
+            .app-shell {
+                grid-template-columns: 300px minmax(0, 1fr);
+            }
+
+            .info-panel {
+                display: none;
+            }
+        }
+
+        @media (max-width: 980px) {
+            .app-shell {
+                grid-template-columns: 1fr;
+                padding: 0;
+                gap: 0;
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            .chat-shell {
+                border-radius: 0;
+                height: var(--app-height);
+            }
+
+            .chat-header {
+                padding-top: calc(18px + env(safe-area-inset-top));
+            }
+
+            .chat-messages {
+                padding: 16px;
+            }
+
+            .composer {
+                padding-left: 12px;
+                padding-right: 12px;
+            }
+
+            .composer-row {
+                gap: 8px;
+            }
+
+            .input-wrap {
+                padding: 10px 12px;
+                border-radius: 18px;
+            }
+
+            .attach-btn,
+            .send-btn,
+            .icon-btn {
+                width: 48px;
+                height: 48px;
+                border-radius: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="brand">
+                <h1>🤖 OpenClaw Chat</h1>
+                <p>Workspace personal MGN — colorful, cepat, dan sekarang punya history yang lebih proper.</p>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="toolbar" style="margin-bottom:10px;">
+                    <h2>Chats</h2>
+                    <button class="secondary-btn" id="newChatBtn" style="width:auto; min-height:36px; padding:8px 12px;">+ Baru</button>
+                </div>
+                <input id="searchInput" class="search-input" type="text" placeholder="Cari chat atau isi pesan...">
+                <div class="section-note" style="font-size:12px; margin-top:8px; line-height:1.5;">
+                    Search lokal realtime untuk judul, preview, dan isi pesan.
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h2>Model</h2>
+                <select id="modelSelect"></select>
+                <div class="section-note" style="font-size:12px; margin-top:8px; line-height:1.5;">
+                    Model provider dipakai sebagai <b>preferensi/hint</b> ke agent OpenClaw. Routing akhir tetap dikelola OpenClaw.
+                </div>
+            </div>
+
+            <div class="sidebar-scroll">
+                <div class="sidebar-section" style="border-bottom:none; padding-bottom:10px;">
+                    <h2>Status</h2>
+                    <div class="status-card">
+                        <div class="status-pill"><span class="dot"></span> Gateway connected</div>
+                        <div class="status-row"><b>Session:</b> <span id="sessionLabel">openclaw-control-ui</span></div>
+                        <div class="status-row"><b>Default:</b> <span id="defaultModelLabel">-</span></div>
+                        <div class="status-row"><b>Gateway:</b> <span id="gatewayLabel">-</span></div>
+                    </div>
+                </div>
+
+                <div class="history-list" id="historyList"></div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="row">
+                    <button class="secondary-btn" id="exportBtn">Export chat</button>
+                    <button class="danger-btn" id="clearAllBtn">Hapus semua</button>
+                </div>
+            </div>
+        </aside>
+
+        <main class="chat-shell">
+            <div class="chat-header">
+                <div>
+                    <h2 id="chatTitle">Chat Baru</h2>
+                    <p id="chatSubtitle">Siap bantu coding, dokumen, gambar, dan kerja harian.</p>
+                </div>
+                <div class="header-actions">
+                    <button class="icon-btn" id="mobileHistoryBtn" title="Riwayat">☰</button>
+                    <button class="icon-btn" id="mobileInfoBtn" title="Info">ⓘ</button>
+                    <button class="icon-btn" id="mobileNewChatBtn" title="Chat baru">＋</button>
+                </div>
+            </div>
+
+            <div class="chat-messages" id="chatMessages"></div>
+
+            <div class="composer">
+                <div id="filePreview" class="file-preview"></div>
+                <div class="composer-row">
+                    <button class="attach-btn" id="attachButton" title="Upload file">📎</button>
+                    <div class="input-wrap">
+                        <div class="input-topline">
+                            <span id="composerHint" class="info-chip model-chip">Model: otomatis</span>
+                            <select id="modelSelectInline" class="model-inline-select"></select>
+                            <span class="info-chip file-chip">Maks 5 file • 10MB/file</span>
+                        </div>
+                        <textarea id="messageInput" rows="1" placeholder="Tulis pesan..."></textarea>
+                    </div>
+                    <button class="stop-btn" id="stopButton" title="Stop generate">■</button>
+                    <button class="send-btn" id="sendButton" title="Kirim">➤</button>
+                </div>
+                <input type="file" id="fileInput" accept="image/*,application/pdf,.doc,.docx,.txt,.md,.json,.csv" multiple>
+            </div>
+        </main>
+
+        <aside class="info-panel">
+            <div class="panel-header">
+                <div class="panel-title">Session Info</div>
+                <div class="panel-muted">Ringkasan cepat chat aktif</div>
+            </div>
+            <div class="panel-scroll" id="infoPanelContent"></div>
+        </aside>
+    </div>
+
+    <div class="bottom-sheet" id="historySheet">
+        <div class="bottom-sheet-panel">
+            <div class="sheet-head">
+                <div>
+                    <div class="panel-title">Riwayat Chat</div>
+                    <div class="panel-muted">Buka, cari, dan kelola session</div>
+                </div>
+                <button class="sheet-close" data-close-sheet="historySheet">✕</button>
+            </div>
+            <div class="sidebar-section">
+                <div class="toolbar" style="margin-bottom:10px;">
+                    <h2>Chats</h2>
+                    <button class="secondary-btn" id="sheetNewChatBtn" style="width:auto; min-height:36px; padding:8px 12px;">+ Baru</button>
+                </div>
+                <input id="sheetSearchInput" class="search-input" type="text" placeholder="Cari chat atau isi pesan...">
+            </div>
+            <div class="history-list" id="sheetHistoryList"></div>
+        </div>
+    </div>
+
+    <div class="bottom-sheet" id="infoSheet">
+        <div class="bottom-sheet-panel">
+            <div class="sheet-head">
+                <div>
+                    <div class="panel-title">Info Session</div>
+                    <div class="panel-muted">Summary, files, dan metadata</div>
+                </div>
+                <button class="sheet-close" data-close-sheet="infoSheet">✕</button>
+            </div>
+            <div id="sheetInfoPanelContent"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        const SESSION_KEY = 'openclaw-active-session-api-v1';
+        const MODEL_KEY = 'openclaw-selected-model';
+
+        const chatMessages = document.getElementById('chatMessages');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const stopButton = document.getElementById('stopButton');
+        const attachButton = document.getElementById('attachButton');
+        const fileInput = document.getElementById('fileInput');
+        const filePreview = document.getElementById('filePreview');
+        const modelSelect = document.getElementById('modelSelect');
+        const modelSelectInline = document.getElementById('modelSelectInline');
+        const historyList = document.getElementById('historyList');
+        const sheetHistoryList = document.getElementById('sheetHistoryList');
+        const newChatBtn = document.getElementById('newChatBtn');
+        const sheetNewChatBtn = document.getElementById('sheetNewChatBtn');
+        const mobileNewChatBtn = document.getElementById('mobileNewChatBtn');
+        const mobileHistoryBtn = document.getElementById('mobileHistoryBtn');
+        const mobileInfoBtn = document.getElementById('mobileInfoBtn');
+        const clearAllBtn = document.getElementById('clearAllBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const defaultModelLabel = document.getElementById('defaultModelLabel');
+        const gatewayLabel = document.getElementById('gatewayLabel');
+        const sessionLabel = document.getElementById('sessionLabel');
+        const composerHint = document.getElementById('composerHint');
+        const chatTitle = document.getElementById('chatTitle');
+        const chatSubtitle = document.getElementById('chatSubtitle');
+        const searchInput = document.getElementById('searchInput');
+        const sheetSearchInput = document.getElementById('sheetSearchInput');
+        const infoPanelContent = document.getElementById('infoPanelContent');
+        const sheetInfoPanelContent = document.getElementById('sheetInfoPanelContent');
+        const historySheet = document.getElementById('historySheet');
+        const infoSheet = document.getElementById('infoSheet');
+
+        const API_BASE = window.location.origin;
+        let attachedFiles = [];
+        let availableModels = [];
+        let selectedModel = localStorage.getItem(MODEL_KEY) || 'routing:auto';
+        let histories = [];
+        let activeChatId = localStorage.getItem(SESSION_KEY) || null;
+        let activeChat = null;
+        let historySearchTerm = '';
+        let openMenuChatId = null;
+        let loadingStageTimer = null;
+        let streamingAssistantNode = null;
+        let activeStreamController = null;
+        let streamStoppedByUser = false;
+        let copiedButtonTimer = null;
+
+        function syncAppHeight() {
+            const viewportHeight = window.visualViewport?.height || window.innerHeight;
+            document.documentElement.style.setProperty('--app-height', `${viewportHeight}px`);
+        }
+
+        function uid(prefix = '') {
+            return `${prefix}${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+        }
+
+        function formatTime(ts) {
+            return new Date(ts).toLocaleString('id-ID', {
+                day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
+            });
+        }
+
+        function formatLongTime(ts) {
+            return new Date(ts).toLocaleString('id-ID', {
+                year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit'
+            });
+        }
+
+        function formatFileSize(bytes) {
+            const value = Number(bytes || 0);
+            if (value < 1024) return `${value} B`;
+            if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
+            return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+        }
+
+        function escapeHtml(text) {
+            return String(text || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function plainText(value) {
+            return String(value || '')
+                .replace(/```[\s\S]*?```/g, ' ')
+                .replace(/`([^`]*)`/g, '$1')
+                .replace(/[>#*_\-]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        async function api(path, options = {}) {
+            const response = await fetch(`${API_BASE}${path}`, {
+                headers: {
+                    ...(options.body && !(options.body instanceof FormData) ? { 'Content-Type': 'application/json' } : {}),
+                    ...(options.headers || {})
+                },
+                ...options,
+                body: options.body && !(options.body instanceof FormData) ? JSON.stringify(options.body) : options.body
+            });
+
+            let data = null;
+            const text = await response.text();
+            try { data = text ? JSON.parse(text) : null; } catch { data = { raw: text }; }
+            if (!response.ok) {
+                throw new Error(data?.error || data?.message || `${response.status} ${response.statusText}`);
+            }
+            return data;
+        }
+
+        function groupVisibleChats() {
+            const term = historySearchTerm.trim().toLowerCase();
+            const filtered = !term ? histories : histories.filter(chat => {
+                const haystack = [chat.title, chat.summary, chat.lastMessagePreview].join('\\n').toLowerCase();
+                return haystack.includes(term);
+            });
+            const sorted = [...filtered].sort((a, b) => {
+                if (a.pinned !== b.pinned) return Number(b.pinned) - Number(a.pinned);
+                return new Date(b.updatedAt) - new Date(a.updatedAt);
+            });
+            return {
+                pinned: sorted.filter(chat => chat.pinned && !chat.archived),
+                recent: sorted.filter(chat => !chat.pinned && !chat.archived),
+                archived: sorted.filter(chat => chat.archived)
+            };
+        }
+
+        async function loadSessions() {
+            const query = historySearchTerm.trim() ? `?q=${encodeURIComponent(historySearchTerm.trim())}` : '';
+            const data = await api(`/api/sessions${query}`);
+            histories = data.items || [];
+            if (!histories.length) {
+                activeChat = null;
+                activeChatId = null;
+                localStorage.removeItem(SESSION_KEY);
+                renderAll();
+                return;
+            }
+            if (!activeChatId || !histories.find(chat => chat.id === activeChatId)) {
+                activeChatId = histories[0].id;
+                localStorage.setItem(SESSION_KEY, activeChatId);
+            }
+            await loadSessionDetail(activeChatId, false);
+            renderHistoryLists();
+        }
+
+        async function loadSessionDetail(sessionId, rerender = true) {
+            activeChat = await api(`/api/sessions/${sessionId}`);
+            activeChatId = activeChat.id;
+            localStorage.setItem(SESSION_KEY, activeChatId);
+            if (rerender) renderAll();
+        }
+
+        function renderHistoryLists() {
+            const groups = groupVisibleChats();
+            renderHistoryListInto(historyList, groups, false);
+            renderHistoryListInto(sheetHistoryList, groups, true);
+        }
+
+        function renderHistoryListInto(target, groups, mobile) {
+            target.innerHTML = '';
+            const entries = [
+                ['Pinned', groups.pinned],
+                ['Recent', groups.recent],
+                ['Archived', groups.archived]
+            ].filter(([, items]) => items.length);
+
+            if (!entries.length) {
+                target.innerHTML = `<div class="empty-card">Tidak ada hasil untuk pencarian <b>${escapeHtml(historySearchTerm)}</b>.</div>`;
+                return;
+            }
+
+            entries.forEach(([label, items]) => {
+                const group = document.createElement('div');
+                group.className = 'history-group';
+                group.innerHTML = `<h3>${label}</h3>`;
+                items.forEach(chat => group.appendChild(buildHistoryItem(chat, mobile)));
+                target.appendChild(group);
+            });
+        }
+
+        function buildHistoryItem(chat, mobile) {
+            const item = document.createElement('div');
+            item.className = `history-item ${chat.id === activeChatId ? 'active' : ''}`;
+
+            const main = document.createElement('div');
+            main.className = 'history-item-main';
+            main.onclick = async () => {
+                await loadSessionDetail(chat.id);
+                if (mobile) closeSheet(historySheet);
+            };
+            main.innerHTML = `
+                <div class="history-head">
+                    <div style="flex:1; min-width:0;">
+                        <div class="history-title">${chat.pinned ? '📌 ' : ''}${escapeHtml(chat.title)}</div>
+                        <div class="history-preview">${escapeHtml(chat.lastMessagePreview || 'Belum ada isi chat.')}</div>
+                        <div class="history-meta">${chat.messageCount || 0} pesan • ${formatTime(chat.updatedAt)}${chat.lastModel ? ` • ${escapeHtml(chat.lastModel)}` : ''}</div>
+                    </div>
+                </div>
+            `;
+
+            const footer = document.createElement('div');
+            footer.className = 'toolbar';
+            footer.style.marginTop = '10px';
+            footer.style.gap = '8px';
+
+            const tags = document.createElement('div');
+            tags.className = 'row';
+            tags.style.flexWrap = 'wrap';
+            tags.innerHTML = `
+                ${chat.archived ? '<span class="tiny-pill" style="background:rgba(245,158,11,0.12); color:#b45309;">Archived</span>' : ''}
+                ${chat.lastModel ? `<span class="tiny-pill">${escapeHtml(chat.lastModel)}</span>` : ''}
+            `;
+
+            const menuWrap = document.createElement('div');
+            menuWrap.className = 'menu-wrap';
+            const menuBtn = document.createElement('button');
+            menuBtn.className = 'menu-btn';
+            menuBtn.textContent = '⋯';
+            menuBtn.onclick = (e) => {
+                e.stopPropagation();
+                openMenuChatId = openMenuChatId === chat.id ? null : chat.id;
+                renderHistoryLists();
+            };
+            menuWrap.appendChild(menuBtn);
+
+            if (openMenuChatId === chat.id) {
+                const menu = document.createElement('div');
+                menu.className = 'context-menu';
+                menu.innerHTML = `
+                    <button data-action="rename">Rename</button>
+                    <button data-action="pin">${chat.pinned ? 'Unpin' : 'Pin'}</button>
+                    <button data-action="archive">${chat.archived ? 'Unarchive' : 'Archive'}</button>
+                    <button data-action="duplicate">Duplicate</button>
+                    <button data-action="delete" class="danger-item">Delete</button>
+                `;
+                menu.querySelectorAll('button').forEach(btn => {
+                    btn.onclick = async (event) => {
+                        event.stopPropagation();
+                        await handleChatAction(chat.id, btn.dataset.action, mobile);
+                    };
+                });
+                menuWrap.appendChild(menu);
+            }
+
+            footer.appendChild(tags);
+            footer.appendChild(menuWrap);
+            item.appendChild(main);
+            item.appendChild(footer);
+            return item;
+        }
+
+        async function handleChatAction(chatId, action, mobile = false) {
+            const chat = histories.find(h => h.id === chatId);
+            if (!chat) return;
+
+            if (action === 'rename') {
+                const next = prompt('Rename chat:', chat.title);
+                if (next && next.trim()) {
+                    await api(`/api/sessions/${chatId}`, { method: 'PATCH', body: { title: next.trim() } });
+                }
+            }
+
+            if (action === 'pin') {
+                await api(`/api/sessions/${chatId}`, { method: 'PATCH', body: { pinned: !chat.pinned } });
+            }
+
+            if (action === 'archive') {
+                await api(`/api/sessions/${chatId}`, { method: 'PATCH', body: { archived: !chat.archived } });
+            }
+
+            if (action === 'duplicate') {
+                await api('/api/sessions', {
+                    method: 'POST',
+                    body: { mode: 'with_context', title: `${chat.title} (copy)`, sourceSessionId: chat.id, seedSummary: chat.summary || '' }
+                });
+            }
+
+            if (action === 'delete') {
+                if (!confirm(`Hapus chat "${chat.title}" dari history lokal/server?`)) return;
+                await api(`/api/sessions/${chatId}`, { method: 'DELETE' });
+                if (activeChatId === chatId) activeChatId = null;
+            }
+
+            openMenuChatId = null;
+            await loadSessions();
+            if (mobile) closeSheet(historySheet);
+        }
+
+        function renderMessages() {
+            chatMessages.innerHTML = '';
+            if (!activeChat) {
+                chatTitle.textContent = 'Belum ada session';
+                chatSubtitle.textContent = 'Buat chat baru untuk mulai.';
+                sessionLabel.textContent = '-';
+                chatMessages.innerHTML = '<div class="empty-card">Belum ada session aktif.</div>';
+                return;
+            }
+            chatTitle.textContent = activeChat.title;
+            chatSubtitle.textContent = `Terakhir diupdate ${formatTime(activeChat.updatedAt)}${activeChat.lastModel ? ` • model terakhir ${activeChat.lastModel}` : ''}`;
+            sessionLabel.textContent = activeChatId;
+            (activeChat.messages || []).forEach(msg => addMessageToDom(msg));
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function addMessageToDom(message) {
+            const wrapper = document.createElement('div');
+            wrapper.className = `message ${message.role === 'user' ? 'user' : 'assistant'}`;
+            wrapper.dataset.messageId = message.id;
+
+            const bubble = document.createElement('div');
+            bubble.className = 'message-bubble';
+
+            const meta = document.createElement('div');
+            meta.className = 'message-meta';
+            meta.textContent = message.model
+                ? `${message.role === 'user' ? 'You' : 'OpenClaw'} • ${formatTime(message.createdAt)} • ${message.model}`
+                : (message.role === 'user' ? `You • ${formatTime(message.createdAt)}` : `OpenClaw • ${formatTime(message.createdAt)}`);
+            bubble.appendChild(meta);
+
+            if (message.attachments?.length) {
+                const attachmentWrap = document.createElement('div');
+                attachmentWrap.style.display = 'grid';
+                attachmentWrap.style.gap = '8px';
+                attachmentWrap.style.marginBottom = '10px';
+                message.attachments.forEach(att => {
+                    const attachment = document.createElement('div');
+                    attachment.className = 'attachment-item';
+                    attachment.innerHTML = `
+                        <div class="attachment-name">${escapeHtml(att.name)}</div>
+                        <div class="attachment-meta">${escapeHtml(att.type || 'file')} • ${formatFileSize(att.size || 0)}</div>
+                    `;
+                    attachmentWrap.appendChild(attachment);
+                });
+                bubble.appendChild(attachmentWrap);
+            }
+
+            const content = document.createElement('div');
+            content.className = 'markdown-content';
+            content.innerHTML = message.role === 'user'
+                ? escapeHtml(message.content).split(String.fromCharCode(10)).join('<br>')
+                : marked.parse(message.content || '');
+            bubble.appendChild(content);
+
+            const actions = document.createElement('div');
+            actions.className = 'message-actions';
+
+            if (message.role === 'assistant') {
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'message-action-btn';
+                copyBtn.textContent = 'Copy';
+                copyBtn.onclick = async () => {
+                    await navigator.clipboard.writeText(message.content || '');
+                    clearTimeout(copiedButtonTimer);
+                    copyBtn.textContent = 'Copied';
+                    copiedButtonTimer = setTimeout(() => {
+                        copyBtn.textContent = 'Copy';
+                    }, 1200);
+                };
+                actions.appendChild(copyBtn);
+
+                const isLastAssistant = activeChat?.messages?.filter(m => m.role === 'assistant').slice(-1)[0]?.id === message.id;
+                if (isLastAssistant) {
+                    const regenBtn = document.createElement('button');
+                    regenBtn.className = 'message-action-btn';
+                    regenBtn.textContent = 'Regenerate';
+                    regenBtn.onclick = () => regenerateLastReply();
+                    actions.appendChild(regenBtn);
+                }
+            }
+
+            if (message.role === 'user') {
+                const editBtn = document.createElement('button');
+                editBtn.className = 'message-action-btn';
+                editBtn.textContent = 'Edit & resend';
+                editBtn.onclick = () => editAndResendMessage(message);
+                actions.appendChild(editBtn);
+            }
+
+            const branchBtn = document.createElement('button');
+            branchBtn.className = 'message-action-btn';
+            branchBtn.textContent = 'Branch';
+            branchBtn.onclick = () => branchFromMessage(message.id);
+            actions.appendChild(branchBtn);
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'message-action-btn';
+            deleteBtn.textContent = 'Delete';
+            deleteBtn.onclick = () => deleteMessage(message.id);
+            actions.appendChild(deleteBtn);
+
+            if (actions.childElementCount) {
+                bubble.appendChild(actions);
+            }
+
+            wrapper.appendChild(bubble);
+            chatMessages.appendChild(wrapper);
+        }
+
+        async function renderInfoPanel() {
+            if (!activeChat) {
+                infoPanelContent.innerHTML = '<div class="panel-section"><div class="empty-card">Belum ada session aktif.</div></div>';
+                sheetInfoPanelContent.innerHTML = infoPanelContent.innerHTML;
+                return;
+            }
+
+            const [summaryData, attachmentData, searchData] = await Promise.all([
+                api(`/api/sessions/${activeChat.id}/summary`),
+                api(`/api/sessions/${activeChat.id}/attachments`),
+                historySearchTerm.trim() ? api(`/api/search/messages?q=${encodeURIComponent(historySearchTerm.trim())}&sessionId=${encodeURIComponent(activeChat.id)}`) : Promise.resolve({ items: [] })
+            ]);
+
+            const attachments = attachmentData.items || [];
+            const results = searchData.items || [];
+            const content = `
+                <div class="panel-section">
+                    <div class="panel-card">
+                        <div class="panel-list">
+                            <div class="panel-list-row"><span>Dibuat</span><span>${formatLongTime(activeChat.createdAt)}</span></div>
+                            <div class="panel-list-row"><span>Diupdate</span><span>${formatLongTime(activeChat.updatedAt)}</span></div>
+                            <div class="panel-list-row"><span>Model terakhir</span><span>${escapeHtml(activeChat.lastModel || '-')}</span></div>
+                            <div class="panel-list-row"><span>Jumlah pesan</span><span>${activeChat.messageCount || activeChat.messages?.length || 0}</span></div>
+                            <div class="panel-list-row"><span>Attachment</span><span>${attachments.length}</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel-section">
+                    <div class="chat-subhead" style="margin-bottom:10px;">
+                        <h3>Summary</h3>
+                        <button class="ghost-btn" style="width:auto; min-height:34px; padding:6px 10px;" onclick="editSummary()">Edit</button>
+                    </div>
+                    ${summaryData.summary ? `<div class="panel-card"><div style="font-size:13px; line-height:1.6;">${escapeHtml(summaryData.summary)}</div></div>` : '<div class="empty-card">Belum ada summary.</div>'}
+                </div>
+                <div class="panel-section">
+                    <h3>Key Points</h3>
+                    ${summaryData.keyPoints?.length ? `<ul class="summary-list">${summaryData.keyPoints.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>` : '<div class="empty-card">Belum ada key points.</div>'}
+                </div>
+                <div class="panel-section">
+                    <div class="chat-subhead" style="margin-bottom:10px;">
+                        <h3>Todos</h3>
+                        <button class="ghost-btn" style="width:auto; min-height:34px; padding:6px 10px;" onclick="editTodos()">Edit</button>
+                    </div>
+                    ${summaryData.todos?.length ? `<ul class="summary-list">${summaryData.todos.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>` : '<div class="empty-card">Belum ada todo.</div>'}
+                </div>
+                <div class="panel-section">
+                    <h3>Files</h3>
+                    ${attachments.length ? `<div class="attachment-list">${attachments.map(att => `
+                        <div class="attachment-item">
+                            <div class="attachment-name">${escapeHtml(att.name)}</div>
+                            <div class="attachment-meta">${escapeHtml(att.type || 'file')} • ${formatFileSize(att.size || 0)} • ${formatTime(att.createdAt)}</div>
+                        </div>
+                    `).join('')}</div>` : '<div class="empty-card">Belum ada attachment di session ini.</div>'}
+                </div>
+                ${historySearchTerm.trim() ? `
+                    <div class="panel-section">
+                        <h3>Search in This Chat</h3>
+                        ${results.length ? `<div class="search-results">${results.map(result => `
+                            <div class="search-result" onclick="jumpToMessage('${result.messageId}')">
+                                <div>
+                                    <div class="search-result-title">${escapeHtml(result.sessionTitle)}</div>
+                                    <div class="search-result-snippet">${escapeHtml(result.snippet)}</div>
+                                </div>
+                                <div class="search-result-meta">${formatTime(result.createdAt)}</div>
+                            </div>
+                        `).join('')}</div>` : `<div class="empty-card">Tidak ada kecocokan untuk <b>${escapeHtml(historySearchTerm)}</b> di chat ini.</div>`}
+                    </div>
+                ` : ''}
+            `;
+            infoPanelContent.innerHTML = content;
+            sheetInfoPanelContent.innerHTML = content;
+        }
+
+        window.editSummary = async function editSummary() {
+            if (!activeChat) return;
+            const current = await api(`/api/sessions/${activeChat.id}/summary`);
+            const next = prompt('Edit summary session:', current.summary || '');
+            if (next === null) return;
+            await api(`/api/sessions/${activeChat.id}/summary`, {
+                method: 'PUT',
+                body: { summary: next.trim(), keyPoints: current.keyPoints || [], todos: current.todos || [] }
+            });
+            await loadSessionDetail(activeChat.id, false);
+            await renderInfoPanel();
+            await loadSessions();
+        };
+
+        window.editTodos = async function editTodos() {
+            if (!activeChat) return;
+            const current = await api(`/api/sessions/${activeChat.id}/summary`);
+            const next = prompt('Edit todos (pisahkan dengan baris baru):', (current.todos || []).join('\\n'));
+            if (next === null) return;
+            await api(`/api/sessions/${activeChat.id}/summary`, {
+                method: 'PUT',
+                body: { summary: current.summary || '', keyPoints: current.keyPoints || [], todos: next.split('\\n').map(item => item.trim()).filter(Boolean) }
+            });
+            await loadSessionDetail(activeChat.id, false);
+            await renderInfoPanel();
+        };
+
+        window.jumpToMessage = function jumpToMessage(messageId) {
+            const node = chatMessages.querySelector(`[data-message-id="${messageId}"]`);
+            if (!node) return;
+            node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            closeSheet(infoSheet);
+        };
+
+        function renderAll() {
+            renderHistoryLists();
+            renderMessages();
+            renderInfoPanel();
+            updateComposerHint();
+        }
+
+        function updateComposerHint() {
+            const selectedOption = modelSelect.options[modelSelect.selectedIndex];
+            composerHint.textContent = selectedOption ? `Model: ${selectedOption.text}` : 'Model: otomatis';
+        }
+
+        function populateModelOptions(selectEl) {
+            selectEl.innerHTML = '';
+            const auto = document.createElement('option');
+            auto.value = 'routing:auto';
+            auto.textContent = 'Auto routing OpenClaw';
+            selectEl.appendChild(auto);
+            availableModels.forEach(model => {
+                const opt = document.createElement('option');
+                opt.value = model.id;
+                opt.textContent = model.name;
+                selectEl.appendChild(opt);
+            });
+        }
+
+        function syncModelSelects(nextValue) {
+            modelSelect.value = nextValue;
+            modelSelectInline.value = nextValue;
+            selectedModel = nextValue;
+            localStorage.setItem(MODEL_KEY, selectedModel);
+            updateComposerHint();
+        }
+
+        function populateModelSelect() {
+            populateModelOptions(modelSelect);
+            populateModelOptions(modelSelectInline);
+            const safeValue = [...modelSelect.options].some(o => o.value === selectedModel) ? selectedModel : 'routing:auto';
+            syncModelSelects(safeValue);
+        }
+
+        async function loadConfig() {
+            const data = await api('/api/config');
+            availableModels = data.models || [];
+            defaultModelLabel.textContent = data.defaultModel || '-';
+            gatewayLabel.textContent = data.gatewayUrl || '-';
+            populateModelSelect();
+            messageInput.placeholder = 'Tulis pesan, tempel task, atau upload file...';
+        }
+
+        modelSelect.addEventListener('change', () => {
+            syncModelSelects(modelSelect.value);
+        });
+
+        modelSelectInline.addEventListener('change', () => {
+            syncModelSelects(modelSelectInline.value);
+        });
+
+        messageInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = `${Math.min(this.scrollHeight, 180)}px`;
+        });
+
+        function bindSearch(input) {
+            input.addEventListener('input', async () => {
+                historySearchTerm = input.value;
+                searchInput.value = historySearchTerm;
+                sheetSearchInput.value = historySearchTerm;
+                await loadSessions();
+            });
+        }
+
+        bindSearch(searchInput);
+        bindSearch(sheetSearchInput);
+
+        attachButton.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files || []);
+            files.forEach(file => {
+                if (file.size > 10 * 1024 * 1024) {
+                    alert(`File ${file.name} terlalu besar. Maks 10MB per file.`);
+                    return;
+                }
+                if (attachedFiles.length >= 5) {
+                    alert('Maksimal 5 file per kirim.');
+                    return;
+                }
+                attachedFiles.push(file);
+            });
+            updateFilePreview();
+            fileInput.value = '';
+        });
+
+        function updateFilePreview() {
+            filePreview.innerHTML = '';
+            if (!attachedFiles.length) {
+                filePreview.style.display = 'none';
+                return;
+            }
+            filePreview.style.display = 'grid';
+            attachedFiles.forEach((file, index) => {
+                const card = document.createElement('div');
+                card.className = 'file-card';
+                const thumb = document.createElement('div');
+                thumb.className = 'file-thumb';
+                if (file.type.startsWith('image/')) {
+                    const img = document.createElement('img');
+                    img.src = URL.createObjectURL(file);
+                    thumb.appendChild(img);
+                } else {
+                    thumb.textContent = file.type.includes('pdf') ? '📕' : '📄';
+                }
+                const info = document.createElement('div');
+                info.className = 'file-info';
+                info.innerHTML = `
+                    <div class="file-name">${escapeHtml(file.name)}</div>
+                    <div class="file-size">${formatFileSize(file.size)}</div>
+                `;
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-file';
+                removeBtn.textContent = '×';
+                removeBtn.onclick = () => {
+                    attachedFiles.splice(index, 1);
+                    updateFilePreview();
+                };
+                card.appendChild(thumb);
+                card.appendChild(info);
+                card.appendChild(removeBtn);
+                filePreview.appendChild(card);
+            });
+        }
+
+        function setLoadingStatus(text) {
+            const node = document.getElementById('loadingStatus');
+            if (node) node.textContent = text;
+        }
+
+        function ensureStreamingBubble() {
+            if (streamingAssistantNode) return streamingAssistantNode;
+            const wrapper = document.createElement('div');
+            wrapper.className = 'message assistant';
+            wrapper.id = 'streamingMessage';
+            wrapper.innerHTML = `
+                <div class="message-bubble">
+                    <div class="message-meta">OpenClaw • streaming...</div>
+                    <div class="markdown-content" id="streamingContent"></div>
+                </div>
+            `;
+            chatMessages.appendChild(wrapper);
+            streamingAssistantNode = wrapper;
+            return wrapper;
+        }
+
+        function setStreamingMeta(text) {
+            const wrapper = ensureStreamingBubble();
+            const meta = wrapper.querySelector('.message-meta');
+            if (meta) meta.textContent = text;
+        }
+
+        function updateStreamingContent(text, { showCursor = true } = {}) {
+            const wrapper = ensureStreamingBubble();
+            const content = wrapper.querySelector('#streamingContent');
+            if (content) {
+                const html = marked.parse(text || '');
+                content.innerHTML = showCursor ? `${html}<span class="typing-cursor"></span>` : html;
+            }
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function clearStreamingBubble() {
+            streamingAssistantNode?.remove();
+            streamingAssistantNode = null;
+        }
+
+        function setStreamingState(isStreaming) {
+            sendButton.style.display = isStreaming ? 'none' : 'inline-flex';
+            stopButton.classList.toggle('visible', isStreaming);
+            stopButton.disabled = !isStreaming;
+        }
+
+        function showLoading() {
+            clearTimeout(loadingStageTimer);
+            const wrapper = document.createElement('div');
+            wrapper.className = 'message assistant';
+            wrapper.id = 'loading';
+            wrapper.innerHTML = `
+                <div class="message-bubble">
+                    <div class="message-meta">OpenClaw • memproses</div>
+                    <div class="loading-wrap">
+                        <div class="loading">
+                            <div class="loading-dot"></div>
+                            <div class="loading-dot"></div>
+                            <div class="loading-dot"></div>
+                        </div>
+                        <div class="loading-status" id="loadingStatus">Request terkirim. Menunggu server web chat...</div>
+                    </div>
+                </div>
+            `;
+            chatMessages.appendChild(wrapper);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            setTimeout(() => setLoadingStatus('Server web chat menerima request. Meneruskan ke OpenClaw Gateway...'), 500);
+            setTimeout(() => setLoadingStatus('Gateway sudah dipanggil. Menunggu model memproses jawaban...'), 1800);
+            loadingStageTimer = setTimeout(() => setLoadingStatus('Masih menunggu jawaban dari backend. Kalau terlalu lama, biasanya gateway/model sedang lambat atau koneksi putus.'), 10000);
+        }
+
+        function hideLoading() {
+            clearTimeout(loadingStageTimer);
+            document.getElementById('loading')?.remove();
+        }
+
+        async function refreshActiveSession() {
+            if (!activeChatId) return;
+            await loadSessions();
+            await loadSessionDetail(activeChatId, false);
+            renderAll();
+        }
+
+        async function regenerateLastReply() {
+            if (!activeChatId || sendButton.disabled) return;
+            sendButton.disabled = true;
+            showLoading();
+            setLoadingStatus('Meminta jawaban ulang untuk pesan terakhir...');
+            try {
+                const data = await api(`/api/sessions/${activeChatId}/regenerate`, {
+                    method: 'POST',
+                    body: { model: selectedModel === 'routing:auto' ? null : selectedModel }
+                });
+                hideLoading();
+                activeChatId = data.session?.id || activeChatId;
+                localStorage.setItem(SESSION_KEY, activeChatId);
+                await refreshActiveSession();
+            } catch (error) {
+                setLoadingStatus(`Gagal: ${error.message}`);
+                setTimeout(() => hideLoading(), 1200);
+                alert(`Regenerate error: ${error.message}`);
+            } finally {
+                sendButton.disabled = false;
+            }
+        }
+
+        async function deleteMessage(messageId) {
+            if (!confirm('Hapus pesan ini dari session?')) return;
+            await api(`/api/messages/${messageId}`, { method: 'DELETE' });
+            await refreshActiveSession();
+        }
+
+        async function branchFromMessage(messageId) {
+            const data = await api(`/api/messages/${messageId}/branch`, {
+                method: 'POST',
+                body: { mode: 'full_message' }
+            });
+            activeChatId = data.newSessionId;
+            localStorage.setItem(SESSION_KEY, activeChatId);
+            await refreshActiveSession();
+        }
+
+        async function editAndResendMessage(message) {
+            const next = prompt('Edit pesan user lalu kirim ulang:', message.content || '');
+            if (next === null) return;
+            const edited = next.trim();
+            if (!edited) return alert('Pesan tidak boleh kosong.');
+
+            sendButton.disabled = true;
+            showLoading();
+            setLoadingStatus('Mengirim ulang dari pesan yang diedit...');
+            try {
+                const data = await api(`/api/messages/${message.id}/edit-resend`, {
+                    method: 'POST',
+                    body: {
+                        content: edited,
+                        model: selectedModel === 'routing:auto' ? null : selectedModel
+                    }
+                });
+                hideLoading();
+                activeChatId = data.session?.id || activeChatId;
+                localStorage.setItem(SESSION_KEY, activeChatId);
+                await refreshActiveSession();
+            } catch (error) {
+                setLoadingStatus(`Gagal: ${error.message}`);
+                setTimeout(() => hideLoading(), 1200);
+                alert(`Edit & resend error: ${error.message}`);
+            } finally {
+                sendButton.disabled = false;
+            }
+        }
+
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message && !attachedFiles.length) return;
+            if (!activeChatId) {
+                await newChat();
+            }
+
+            const filesToSend = [...attachedFiles];
+            attachedFiles = [];
+            updateFilePreview();
+            messageInput.value = '';
+            messageInput.style.height = 'auto';
+            sendButton.disabled = true;
+            streamStoppedByUser = false;
+            showLoading();
+            clearStreamingBubble();
+            setStreamingState(true);
+
+            try {
+                const formData = new FormData();
+                formData.append('message', message);
+                formData.append('model', selectedModel);
+                formData.append('sessionId', activeChatId);
+                filesToSend.forEach(file => formData.append('files', file));
+
+                activeStreamController = new AbortController();
+                const response = await fetch(`${API_BASE}/v1/chat/stream`, {
+                    method: 'POST',
+                    body: formData,
+                    signal: activeStreamController.signal
+                });
+
+                if (!response.ok || !response.body) {
+                    const text = await response.text();
+                    throw new Error(text || `${response.status} ${response.statusText}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                let finalData = null;
+
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+                    const parts = buffer.split('\n\n');
+                    buffer = parts.pop() || '';
+
+                    for (const part of parts) {
+                        const lines = part.split('\n');
+                        const eventLine = lines.find(line => line.startsWith('event:'));
+                        const dataLine = lines.find(line => line.startsWith('data:'));
+                        if (!eventLine || !dataLine) continue;
+                        const eventName = eventLine.slice(6).trim();
+                        let payload = {};
+                        try {
+                            payload = JSON.parse(dataLine.slice(5).trim());
+                        } catch {
+                            continue;
+                        }
+
+                        if (eventName === 'meta') {
+                            activeChatId = payload.sessionId || activeChatId;
+                            localStorage.setItem(SESSION_KEY, activeChatId);
+                            setLoadingStatus('Request diterima. Menyiapkan streaming jawaban...');
+                        }
+
+                        if (eventName === 'status') {
+                            setLoadingStatus(payload.message || 'Menunggu status...');
+                        }
+
+                        if (eventName === 'token') {
+                            hideLoading();
+                            setStreamingMeta('OpenClaw • streaming...');
+                            updateStreamingContent(payload.text || '', { showCursor: true });
+                        }
+
+                        if (eventName === 'error') {
+                            throw new Error(payload.error || 'Streaming gagal');
+                        }
+
+                        if (eventName === 'done') {
+                            finalData = payload;
+                        }
+                    }
+                }
+
+                hideLoading();
+                if (!finalData) {
+                    if (streamStoppedByUser) {
+                        setStreamingMeta('OpenClaw • dihentikan');
+                        return;
+                    }
+                    throw new Error('Streaming selesai tanpa payload akhir');
+                }
+                setStreamingMeta('OpenClaw • selesai');
+                updateStreamingContent(finalData.reply || '', { showCursor: false });
+                clearStreamingBubble();
+                activeChatId = finalData.session?.id || activeChatId;
+                localStorage.setItem(SESSION_KEY, activeChatId);
+                await loadSessions();
+                await loadSessionDetail(activeChatId, false);
+                renderAll();
+            } catch (error) {
+                if (error.name === 'AbortError' && streamStoppedByUser) {
+                    hideLoading();
+                    setStreamingMeta('OpenClaw • dihentikan');
+                } else {
+                    setLoadingStatus(`Gagal: ${error.message}`);
+                    clearStreamingBubble();
+                    setTimeout(() => hideLoading(), 1200);
+                    alert(`Koneksi error: ${error.message}`);
+                }
+            } finally {
+                activeStreamController = null;
+                setStreamingState(false);
+                sendButton.disabled = false;
+            }
+        }
+
+        stopButton.addEventListener('click', () => {
+            if (!activeStreamController) return;
+            streamStoppedByUser = true;
+            activeStreamController.abort();
+        });
+
+        sendButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        async function newChat() {
+            const created = await api('/api/sessions', { method: 'POST', body: { mode: 'clean' } });
+            activeChatId = created.id;
+            localStorage.setItem(SESSION_KEY, activeChatId);
+            await loadSessions();
+            await loadSessionDetail(activeChatId, false);
+            renderAll();
+            closeSheet(historySheet);
+        }
+
+        newChatBtn.addEventListener('click', newChat);
+        sheetNewChatBtn.addEventListener('click', newChat);
+        mobileNewChatBtn.addEventListener('click', newChat);
+
+        clearAllBtn.addEventListener('click', async () => {
+            if (!confirm('Hapus semua riwayat chat yang ada di server lokal ini?')) return;
+            for (const chat of histories) {
+                await api(`/api/sessions/${chat.id}`, { method: 'DELETE' });
+            }
+            activeChatId = null;
+            await loadSessions();
+        });
+
+        exportBtn.addEventListener('click', () => {
+            if (!activeChat) return;
+            const data = JSON.stringify(activeChat, null, 2);
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `openclaw-chat-${activeChatId}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        function openSheet(sheet) { sheet.classList.add('open'); }
+        function closeSheet(sheet) { sheet.classList.remove('open'); }
+
+        mobileHistoryBtn.addEventListener('click', () => openSheet(historySheet));
+        mobileInfoBtn.addEventListener('click', () => openSheet(infoSheet));
+        document.querySelectorAll('[data-close-sheet]').forEach(btn => {
+            btn.addEventListener('click', () => closeSheet(document.getElementById(btn.dataset.closeSheet)));
+        });
+        [historySheet, infoSheet].forEach(sheet => {
+            sheet.addEventListener('click', (e) => {
+                if (e.target === sheet) closeSheet(sheet);
+            });
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!event.target.closest('.menu-wrap')) {
+                openMenuChatId = null;
+                renderHistoryLists();
+            }
+        });
+
+        async function boot() {
+            syncAppHeight();
+            await loadConfig();
+            await loadSessions();
+            renderAll();
+        }
+
+        window.addEventListener('resize', syncAppHeight);
+        window.visualViewport?.addEventListener('resize', syncAppHeight);
+
+        boot().catch(error => {
+            console.error(error);
+            alert(`Gagal load app: ${error.message}`);
+        });
+    </script>
+</body>
+</html>
