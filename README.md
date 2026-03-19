@@ -50,3 +50,15 @@ All scripts auto-detect repo root from script location.
 ## Security note
 
 This repo excludes personal chat history and uploaded files by default.
+
+## OpenClaw integration guide
+
+See `docs/openclaw-integration.md` for deployment/integration steps.
+
+## Contributing
+
+This repository includes:
+
+- issue templates in `.github/ISSUE_TEMPLATE/`
+- pull request template in `.github/PULL_REQUEST_TEMPLATE.md`
+- changelog in `CHANGELOG.md`
