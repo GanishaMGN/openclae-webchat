@@ -33,7 +33,7 @@ Open: `http://127.0.0.1:8080`
 
 ## Screenshots / Demo
 
-> Add real screenshots in `docs/assets/` and update image links below.
+> Included mock/demo visuals in `docs/assets/` so the README is immediately previewable.
 
 ### Desktop
 

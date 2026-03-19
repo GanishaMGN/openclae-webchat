@@ -10,6 +10,11 @@ All notable changes to this project will be documented in this file.
 - `CODE_OF_CONDUCT.md` for community behavior expectations.
 - GitHub Actions CI workflow (`.github/workflows/ci.yml`) for dependency install, JS syntax check, shell syntax checks, and basic startup smoke check.
 - README screenshots/demo section and demo assets folder guidance (`docs/assets/README.md`).
+- Generated initial mock screenshots and demo GIF:
+  - `docs/assets/home.png`
+  - `docs/assets/streaming.png`
+  - `docs/assets/mobile-view.png`
+  - `docs/assets/demo.gif`.
 
 ## [0.1.0] - 2026-03-20
 
