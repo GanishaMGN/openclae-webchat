@@ -53,7 +53,7 @@ jobs:
           mkdir -p docs/assets
           npx playwright screenshot --browser=chromium --viewport-size="1366,900" http://127.0.0.1:8080 docs/assets/home.png
           npx playwright screenshot --browser=chromium --viewport-size="1366,900" http://127.0.0.1:8080 docs/assets/streaming.png
-          npx playwright screenshot --browser=chromium --device="iPhone 13" http://127.0.0.1:8080 docs/assets/mobile-view.png
+          npx playwright screenshot --browser=chromium --viewport-size="390,844" http://127.0.0.1:8080 docs/assets/mobile-view.png
 
       - name: Commit updated screenshots
         run: |
