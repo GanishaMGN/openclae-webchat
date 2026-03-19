@@ -1,0 +1,68 @@
+name: Refresh Screenshots
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "index.html"
+      - "server.js"
+      - ".github/workflows/screenshots.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Start app
+        run: |
+          nohup node server.js > /tmp/openclae-webchat.log 2>&1 &
+          for i in {1..20}; do
+            if curl -fsS http://127.0.0.1:8080 >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "App failed to start" >&2
+          cat /tmp/openclae-webchat.log || true
+          exit 1
+
+      - name: Capture screenshots
+        run: |
+          mkdir -p docs/assets
+          npx playwright screenshot --browser=chromium --viewport-size="1366,900" http://127.0.0.1:8080 docs/assets/home.png
+          npx playwright screenshot --browser=chromium --viewport-size="1366,900" http://127.0.0.1:8080 docs/assets/streaming.png
+          npx playwright screenshot --browser=chromium --device="iPhone 13" http://127.0.0.1:8080 docs/assets/mobile-view.png
+
+      - name: Commit updated screenshots
+        run: |
+          if git diff --quiet -- docs/assets/home.png docs/assets/streaming.png docs/assets/mobile-view.png; then
+            echo "No screenshot changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/assets/home.png docs/assets/streaming.png docs/assets/mobile-view.png
+          git commit -m "docs: refresh real UI screenshots [skip ci]"
+          git push

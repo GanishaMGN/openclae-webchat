@@ -1,5 +1,8 @@
 # openclae-webchat
 
+[![CI](https://github.com/GanishaMGN/openclae-webchat/actions/workflows/ci.yml/badge.svg)](https://github.com/GanishaMGN/openclae-webchat/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/GanishaMGN/openclae-webchat?display_name=tag)](https://github.com/GanishaMGN/openclae-webchat/releases)
+
 Web chat UI for OpenClaw Gateway, extracted from a production-tested setup and packaged for reuse.
 
 ## Features
@@ -33,7 +36,7 @@ Open: `http://127.0.0.1:8080`
 
 ## Screenshots / Demo
 
-> Included mock/demo visuals in `docs/assets/` so the README is immediately previewable.
+> Screenshots below are captured from the running app (auto-refreshed via GitHub Actions).
 
 ### Desktop
 

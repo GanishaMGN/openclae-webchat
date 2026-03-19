@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.2] - 2026-03-20
+
+### Added
+- README badges for CI and latest release.
+- Screenshot automation workflow (`.github/workflows/screenshots.yml`) using Playwright on Ubuntu runner to capture real UI images.
+
+### Changed
+- README screenshot note updated to indicate real app captures (not mock visuals).
+
 
 ## [0.1.1] - 2026-03-20
 
