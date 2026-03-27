@@ -911,23 +911,52 @@ async function sendToOpenClaw({ requestId, message, files = [], model, sessionId
     }
 
     if (stream) {
-        const text = await response.text();
         let fullText = '';
-        
-        const lines = text.split('\n');
-        for (const line of lines) {
-            if (!line.startsWith('data:')) continue;
-            const raw = line.slice(5).trim();
-            if (!raw || raw === '[DONE]') continue;
-            try {
-                const parsed = JSON.parse(raw);
-                const delta = extractStreamDelta(parsed);
-                if (delta) {
-                    fullText += delta;
-                    if (onToken) onToken(delta, fullText);
+        let buffer = '';
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop(); // keep incomplete trailing line in buffer
+
+            for (const line of lines) {
+                if (!line.startsWith('data:')) continue;
+                const raw = line.slice(5).trim();
+                if (!raw || raw === '[DONE]') continue;
+                try {
+                    const parsed = JSON.parse(raw);
+                    const delta = extractStreamDelta(parsed);
+                    if (delta) {
+                        fullText += delta;
+                        if (onToken) onToken(delta, fullText);
+                    }
+                } catch {
+                    // ignore non-json chunks
                 }
-            } catch {
-                // ignore non-json chunks
+            }
+        }
+
+        // flush remaining buffer
+        if (buffer.trim()) {
+            const line = buffer.trim();
+            if (line.startsWith('data:')) {
+                const raw = line.slice(5).trim();
+                if (raw && raw !== '[DONE]') {
+                    try {
+                        const parsed = JSON.parse(raw);
+                        const delta = extractStreamDelta(parsed);
+                        if (delta) {
+                            fullText += delta;
+                            if (onToken) onToken(delta, fullText);
+                        }
+                    } catch {}
+                }
             }
         }
 
