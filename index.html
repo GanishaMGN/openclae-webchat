@@ -1709,19 +1709,61 @@
             if (meta) meta.textContent = text;
         }
 
-        function updateStreamingContent(text, { showCursor = true } = {}) {
+        let streamingRawText = '';
+        let typewriterQueue = '';
+        let typewriterInterval = null;
+
+        function renderStreamingPlain() {
+            const content = document.getElementById('streamingContent');
+            if (!content) return;
+            const escaped = escapeHtml(streamingRawText).replace(/\n/g, '<br>');
+            content.innerHTML = `${escaped}<span class="typing-cursor"></span>`;
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function startTypewriter() {
+            if (typewriterInterval) return;
+            typewriterInterval = setInterval(() => {
+                if (typewriterQueue.length > 0) {
+                    const chunk = typewriterQueue.slice(0, 3);
+                    typewriterQueue = typewriterQueue.slice(3);
+                    streamingRawText += chunk;
+                    renderStreamingPlain();
+                }
+            }, 12);
+        }
+
+        function stopTypewriter() {
+            if (typewriterInterval) {
+                clearInterval(typewriterInterval);
+                typewriterInterval = null;
+            }
+        }
+
+        function appendStreamingDelta(delta) {
+            if (!delta) return;
+            ensureStreamingBubble();
+            typewriterQueue += delta;
+            startTypewriter();
+        }
+
+        function finalizeStreamingContent(text) {
+            stopTypewriter();
+            typewriterQueue = '';
             const wrapper = ensureStreamingBubble();
             const content = wrapper.querySelector('#streamingContent');
             if (content) {
-                const html = marked.parse(text || '');
-                content.innerHTML = showCursor ? `${html}<span class="typing-cursor"></span>` : html;
+                content.innerHTML = marked.parse(text || '');
             }
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
         function clearStreamingBubble() {
+            stopTypewriter();
             streamingAssistantNode?.remove();
             streamingAssistantNode = null;
+            streamingRawText = '';
+            typewriterQueue = '';
         }
 
         function setStreamingState(isStreaming) {
@@ -1912,7 +1954,7 @@
                         if (eventName === 'token') {
                             hideLoading();
                             setStreamingMeta('OpenClaw • streaming...');
-                            updateStreamingContent(payload.text || '', { showCursor: true });
+                            appendStreamingDelta(payload.delta || '');
                         }
 
                         if (eventName === 'error') {
@@ -1929,12 +1971,13 @@
                 if (!finalData) {
                     if (streamStoppedByUser) {
                         setStreamingMeta('OpenClaw • dihentikan');
+                        finalizeStreamingContent(streamingRawText);
                         return;
                     }
                     throw new Error('Streaming selesai tanpa payload akhir');
                 }
                 setStreamingMeta('OpenClaw • selesai');
-                updateStreamingContent(finalData.reply || '', { showCursor: false });
+                finalizeStreamingContent(finalData.reply || '');
                 clearStreamingBubble();
                 activeChatId = finalData.session?.id || activeChatId;
                 localStorage.setItem(SESSION_KEY, activeChatId);
